@@ -1,134 +1,273 @@
-import { Container } from "pixi.js";
-
 let typeRow = "row";
 let typeColumn = "column";
 
-/*export default class Table {
-    constructor(column = 2, row = 2, w = 50, h = 50) {
-
-        this.container = new PIXI.Container();
-
-        this.element = [];
-
-        this.line = new Line(column, row, w, h);
-
-        let line = new PIXI.Graphics();
-        line.lineStyle(1, 0x000000, 1);
-
-        // 畫直線
-        for (let i = 0; i <= column; i++) {
-            line.moveTo( i * w , 0);
-            line.lineTo( i * w , row * h);
-        }
-
-        // 畫橫線
-        for (let i = 0; i <= row; i++) {
-            line.moveTo( 0 , i * h);
-            line.lineTo( column * w , i * h);
-        }
-
-        this.container.addChild(this.line);
-
-        return this.container;
-    }
-}
-
-class Line{
-    constructor(column, row, w, h){
-        this.line = new PIXI.Graphics();
-        this.line.lineStyle(1, 0x000000, 1);
-
-        // 畫直線
-        for (let i = 0; i <= column; i++) {
-            this.line.moveTo( i * w , 0);
-            this.line.lineTo( i * w , row * h);
-        }
-
-        // 畫橫線
-        for (let i = 0; i <= row; i++) {
-            this.line.moveTo( 0 , i * h);
-			console.log('TCL: Table -> constructor ->  0 , i * h',  0 , i * h)
-            this.line.lineTo( column * w , i * h);
-			console.log('TCL: Table -> constructor ->  column * w , i * h',  column * w , i * h)
-        }
-
-        return this.line;
-    }
-}*/
-
 export default class Table {
     constructor(column = 2, row = 2, w = 50, h = 50) {
+        let styleRed = new PIXI.TextStyle({
+            fontFamily: "Arial",
+            fontSize: 72,
+            fill: "#FFAFAF",
+            stroke: '#FF0000',
+            strokeThickness: 6
+        });
 
         this.container = new PIXI.Container();
 
         this.colLine = [];
         this.rowLine = [];
-
         this.element = [];
+        this.column = column;
+        this.row = row;
 
-        // 畫直線
-        this.colLine[0] = new Line(typeColumn, 0, row * h, 0, this.container)
+        // 畫直線        
+        for (let i = 0; i <= column; i++) {
+            this.colLine[i] = this.creatLine(typeColumn, i * w, row * h, i);
+            this.colLine[i].w = w;
+            this.container.addChild(this.colLine[i]);
+        }
 
         // 畫橫線
-        this.rowLine[0] = new Line(typeRow, 0, column * h, 0, this.container)
+        for (let i = 0; i <= row; i++) {
+            this.rowLine[i] = this.creatLine(typeRow, i * h, column * w, i);
+            this.rowLine[i].h = h;
+            this.container.addChild(this.rowLine[i]);
+        }
 
-        //this.rec = new SSprite(this.container);
+        // 每一格的容器
+        for (let i = 0; i < column; i++) {
+            for (let j = 0; j < row; j++) {
+                this.element[i + j * column] = new PIXI.Container();
+                let element = this.element[i + j * column];
+                element.x = i * w + 3;
+                element.y = j * h + 3;
+                //element.maxWidth = w - 3;
+                //element.maxHeight = h - 3;
 
-        //this.container.addChild(this.colLine[0]);
+                // 容器內的Sprite
+                element.sprite = new PIXI.Sprite();
+                element.sprite.width = w - 3;
+                element.sprite.height = h - 3;
+                element.sprite.tint = 0x555555;
+                element.addChild(element.sprite);
 
+                // 容器內的Text
+                element.text = new PIXI.Text(i + j * column, styleRed);
+                element.addChild(element.text);
+
+                this.container.addChild(element);
+            }
+        }
+
+        // 讓回傳的 container 指向 class 的函式，可以讓外面的人使用
+        this.container.changeWidth = (columnNum, width, dif) => {
+            this.changeWidth(columnNum, width, dif);
+        }
+        this.container.changeHeight = (rowNum, height, dif) => {
+            this.changeHeight(rowNum, height, dif);
+        }
+        this.container.getText = (column, row) => {
+            return this.getText(column, row);
+        }
+        this.container.addText = (column, row, text) => {
+            this.addText(column, row, text);
+        }
 
         return this.container;
     }
 
+    changeWidth(columnNum, width, dif) {
+        if (columnNum === 0) return;
 
+        // 用 width 指定寬度 
+        if (width !== 0) {
+            // 位移量        
+            dif = width - (this.colLine[columnNum].x - this.colLine[columnNum - 1].x);
+            this.colLine[columnNum].w = width;
+            console.log('TCL: Table -> changeWidth -> dif', dif)
+        }
 
-}
-class Line {
-    constructor(type, xy, len, num, container) {
+        // 用滑鼠拖拉的變化量dif決定寬度
+        if (width === 0) {
+            this.colLine[columnNum].w += dif;
+            this.colLine[columnNum].x -= dif;
+        }
+
+        // 移動直行位置
+        for (let i = columnNum; i <= this.column; i++) {
+            this.colLine[i].x += dif;
+        }
+
+        // 改變橫線長度
+        for (let i = 0; i <= this.row; i++) {
+            this.rowLine[i].width += dif;
+        }
+
+        // 改變儲存格的大小座標
+        for (let i = columnNum - 1; i < this.column; i++) {
+            for (let j = 0; j < this.row; j++) {
+                let element = this.element[i + j * this.column];
+
+                //改變長寬的後面直行改變x座標
+                element.x += dif;
+                if (i > columnNum - 1) continue;
+
+                //改變長寬的該行改變寬，不改變座標
+                element.sprite.width += dif;
+                element.x -= dif;
+                //element.width += dif;
+            }
+        }
+    }
+
+    changeHeight(rowNum, height, dif) {
+        if (rowNum === 0) return;
+
+        // 用 height 指定高度
+        if (height !== 0) {
+            // 位移量        
+            dif = height - (this.rowLine[rowNum].y - this.rowLine[rowNum - 1].y);
+            this.rowLine[rowNum].h = height;
+        }
+
+        // 用滑鼠拖拉的變化量dif決定高度
+        if (height === 0) {
+            this.rowLine[rowNum].h += dif;
+            this.rowLine[rowNum].y -= dif;
+        }
+
+        // 移動橫列位置
+        for (let i = rowNum; i <= this.row; i++) {
+            this.rowLine[i].y += dif;
+        }
+
+        // 改變直線長度
+        for (let i = 0; i <= this.column; i++) {
+            this.colLine[i].height += dif;
+        }
+
+        // 改變儲存格的大小座標
+        for (let i = 0; i < this.column; i++) {
+            for (let j = rowNum - 1; j < this.row; j++) {
+                let element = this.element[i + j * this.column];
+
+                //改變長寬的後面直行改變x座標
+                element.y += dif;
+                if (j > rowNum - 1) continue;
+
+                //改變長寬的該行改變寬，不改變座標
+                element.sprite.height += dif;
+                element.y -= dif;
+                //element.height += dif;
+            }
+        }
+    }
+
+    creatLine(type, xy, len, num) {
         let line = new PIXI.Graphics();
 
-        this.length = len;
-        this.num = num;
+        line.length = len;
+        line.num = num;
+        line.type = type;
 
-        //line.lineStyle(10, 0x000000, 2);
         line.beginFill(0x000000);
 
         if (type === typeColumn) {
-            line.drawRect(xy, 0, 3, len);
+            line.drawRect(0, 0, 3, len);
             line.endFill();
             line.x = xy;
         }
         else if (type === typeRow) {
-            line.drawRect(0, xy, len, 3);
+            line.drawRect(0, 0, len + 3, 3);
             line.endFill();
             line.y = xy;
         }
 
-
+        line.isMouseDown = false;
         line.interactive = true;
         line.buttonMode = true;
-        line.cursor = 'wait';
+        line.cursor = 'crosshair';
 
-        line.on('pointerdown', () => {console.log("HIT"); });
 
-        container.addChild(line);
+        line.on('pointerdown', mouseDown)
+            .on('pointerup', mouseUp)
+            .on('pointerupoutside', mouseUp)
+            .on('pointermove', mouseDrag);
+
+        return line;
     }
 
-    removeLine(){
-        //app.stage.removeChild(this.line);
+    getText(column, row) {
+        let element = this.element[column - 1 + (row - 1) * this.column];
+        element.removeChild(element.text)
+        return element.text;
+    }
+
+    addText(column, row, text) {
+        let element = this.element[column - 1 + (row - 1) * this.column];
+        element.text = text;
+        element.text.x = 0;
+        element.text.y = 0;
+        element.text.text = 87;
+        element.addChild(element.text);
+    }
+
+    getSprite(column, row) {
+
     }
 }
 
-// class SSprite{
-//     constructor(container, w = 100, h = 100){
-//         let rectangle = new PIXI.Graphics();
-//         rectangle.beginFill(0x66CCFF);
-//         rectangle.drawRect(10, 10, w, h);
-//         rectangle.endFill();
-//         rectangle.interactive = true;
-//         rectangle.buttonMode = true;
-//         rectangle.on('pointerdown', () => {console.log("HIT"); });
-//         container.addChild(rectangle);
+function mouseDown(event) {
+    console.log("HIT");
+    if (this.num === 0) return;
+    this.data = event.data;
+    this.originX = this.x;
+    this.originY = this.y;
+    this.isMouseDown = true;
+}
 
-//     }
-// }
+function mouseUp() {
+    console.log("UP");
+
+    // 防止重複兩次觸發
+    if (this.isMouseDown === false) return;
+
+    this.isMouseDown = false;
+    if (this.type === typeColumn) {
+        // 線移動到靠近前一條線的情況
+        if (this.x <= this.originX - this.w + 5) {
+            this.x = this.originX - this.w + 5;
+        }
+        this.parent.changeWidth(this.num, 0, this.x - this.originX)
+    }
+    if (this.type === typeRow) {
+        // 線移動到靠近前一條線的情況
+        if (this.y <= this.originY - this.h + 5) {
+            this.y = this.originY - this.h + 5;
+        }
+        this.parent.changeHeight(this.num, 0, this.y - this.originY)
+    }
+}
+
+function mouseDrag() {
+    if (this.isMouseDown === false) return;
+
+    let mousePos = this.data.getLocalPosition(this.parent);
+
+    if (this.type === typeColumn) {
+        this.x = mousePos.x;
+
+        // 線移動到靠近前一條線的情況
+        if (this.x <= this.originX - this.w + 5) {
+            this.x = this.originX - this.w + 5;
+        }
+    }
+
+    if (this.type === typeRow) {
+        this.y = mousePos.y;
+
+        // 線移動到靠近前一條線的情況
+        if (this.y <= this.originY - this.h + 5) {
+            this.y = this.originY - this.h + 5;
+        }
+    }
+}

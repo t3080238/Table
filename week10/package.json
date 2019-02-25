@@ -6,7 +6,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "webpack --mode development --watch",
     "build": "webpack --mode development",
-    "start": "http-server -a localhost -o -p 8082",
+    "start": "webpack --mode development && webpack-dev-server ",
     "deploy": "webpack --mode production"
   },
   "author": "",
@@ -20,7 +20,8 @@
     "pixi.js": "^4.8.5",
     "style-loader": "^0.23.1",
     "webpack": "^4.29.3",
-    "webpack-cli": "^3.2.3"
+    "webpack-cli": "^3.2.3",
+    "webpack-dev-server": "^3.2.0"
   },
   "dependencies": {
     "jquery": "^3.3.1"

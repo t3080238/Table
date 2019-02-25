@@ -35,18 +35,22 @@ window.onload = function () {
 
     function initial() {
 
-        table = new Table();
-		console.log('TCL: initial -> table', table)
-        
-        console.log('TCL: initial -> table.x', table.x)
-        console.log('TCL: initial -> table.y', table.y)
+        table = new Table(5, 4, 100, 100);
 
         table.x = 50;
         table.y = 50;
-        console.log('TCL: initial -> table.x', table.x)
-        console.log('TCL: initial -> table.y', table.y)
 
         app.stage.addChild(table);
+
+        let tex = table.getText(3,2);
+        console.log('TCL: initial -> tex', tex);
+        
+        tex.text = "88"
+        tex.x = 600;
+        tex.y = 600;
+
+        app.stage.addChild(tex);
+        table.addText(3,2,tex);
 
         // 設定計時
         app.ticker.add((delta) => { Update(delta); });
