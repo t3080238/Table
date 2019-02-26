@@ -50,7 +50,7 @@ window.onload = function () {
         tex.y = 600;
 
         app.stage.addChild(tex);
-        table.addText(3,2,tex);
+        //table.addText(3,2,tex);
 
         // 設定計時
         app.ticker.add((delta) => { Update(delta); });

@@ -11,6 +11,8 @@ export default class Table {
             strokeThickness: 6
         });
 
+        let backgroundTex = PIXI.Texture.fromImage("images/backgriund.png");
+
         this.container = new PIXI.Container();
 
         this.colLine = [];
@@ -19,6 +21,31 @@ export default class Table {
         this.column = column;
         this.row = row;
 
+        // 每一格的容器
+        for (let i = 0; i < column; i++) {
+            for (let j = 0; j < row; j++) {
+                this.element[i + j * column] = new PIXI.Container();
+                let element = this.element[i + j * column];
+                element.x = i * w + 3;
+                element.y = j * h + 3;
+                //element.maxWidth = w - 3;
+                //element.maxHeight = h - 3;
+
+                // 容器內的Sprite
+                element.sprite = new PIXI.Sprite(backgroundTex);
+                element.sprite.width = w - 3;
+                element.sprite.height = h - 3;
+                element.sprite.tint = 0xffffff * ((i + j * column) / column * row) ;
+                element.addChild(element.sprite);
+
+                // 容器內的Text
+                element.text = new PIXI.Text(i + j * column, styleRed);
+                element.addChild(element.text);
+
+                this.container.addChild(element);
+            }
+        }
+        
         // 畫直線        
         for (let i = 0; i <= column; i++) {
             this.colLine[i] = this.creatLine(typeColumn, i * w, row * h, i);
@@ -33,36 +60,11 @@ export default class Table {
             this.container.addChild(this.rowLine[i]);
         }
 
-        // 每一格的容器
-        for (let i = 0; i < column; i++) {
-            for (let j = 0; j < row; j++) {
-                this.element[i + j * column] = new PIXI.Container();
-                let element = this.element[i + j * column];
-                element.x = i * w + 3;
-                element.y = j * h + 3;
-                //element.maxWidth = w - 3;
-                //element.maxHeight = h - 3;
-
-                // 容器內的Sprite
-                element.sprite = new PIXI.Sprite();
-                element.sprite.width = w - 3;
-                element.sprite.height = h - 3;
-                element.sprite.tint = 0x555555;
-                element.addChild(element.sprite);
-
-                // 容器內的Text
-                element.text = new PIXI.Text(i + j * column, styleRed);
-                element.addChild(element.text);
-
-                this.container.addChild(element);
-            }
-        }
-
         // 讓回傳的 container 指向 class 的函式，可以讓外面的人使用
-        this.container.changeWidth = (columnNum, width, dif) => {
+        this.container.changeWidth = (columnNum, width, dif = 0) => {
             this.changeWidth(columnNum, width, dif);
         }
-        this.container.changeHeight = (rowNum, height, dif) => {
+        this.container.changeHeight = (rowNum, height, dif = 0) => {
             this.changeHeight(rowNum, height, dif);
         }
         this.container.getText = (column, row) => {
@@ -162,6 +164,14 @@ export default class Table {
         }
     }
 
+    addColumn(column, width){
+
+    }
+
+    addRow(row, height){
+
+    }
+
     creatLine(type, xy, len, num) {
         let line = new PIXI.Graphics();
 
@@ -183,15 +193,16 @@ export default class Table {
         }
 
         line.isMouseDown = false;
+        line.twiceSwitch = false;
         line.interactive = true;
         line.buttonMode = true;
         line.cursor = 'crosshair';
 
 
-        line.on('pointerdown', mouseDown)
-            .on('pointerup', mouseUp)
-            .on('pointerupoutside', mouseUp)
-            .on('pointermove', mouseDrag);
+        line.on('pointerdown', lineMouseDown)
+            .on('pointerup', lineMouseUp)
+            .on('pointerupoutside', lineMouseUp)
+            .on('pointermove', lineMouseDrag);
 
         return line;
     }
@@ -216,8 +227,18 @@ export default class Table {
     }
 }
 
-function mouseDown(event) {
+function lineMouseDown(event) {
     console.log("HIT");
+    if (this.twiceSwitch === true){
+        console.log("Double HIT!!");
+
+        return;
+    }
+
+    this.twiceSwitch = true;
+    setTimeout(()=>{this.twiceSwitch = false;}, 250);
+
+    // 移動線
     if (this.num === 0) return;
     this.data = event.data;
     this.originX = this.x;
@@ -225,7 +246,7 @@ function mouseDown(event) {
     this.isMouseDown = true;
 }
 
-function mouseUp() {
+function lineMouseUp() {
     console.log("UP");
 
     // 防止重複兩次觸發
@@ -239,7 +260,7 @@ function mouseUp() {
         }
         this.parent.changeWidth(this.num, 0, this.x - this.originX)
     }
-    if (this.type === typeRow) {
+        if (this.type === typeRow) {
         // 線移動到靠近前一條線的情況
         if (this.y <= this.originY - this.h + 5) {
             this.y = this.originY - this.h + 5;
@@ -248,7 +269,7 @@ function mouseUp() {
     }
 }
 
-function mouseDrag() {
+function lineMouseDrag() {
     if (this.isMouseDown === false) return;
 
     let mousePos = this.data.getLocalPosition(this.parent);
