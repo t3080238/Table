@@ -43,6 +43,7 @@ window.onload = function () {
         app.stage.addChild(table);
 
         let tex = table.getText(3,2);
+        let tex2 = table.getText(3,2);
         console.log('TCL: initial -> tex', tex);
         
         tex.text = "88"
@@ -50,7 +51,21 @@ window.onload = function () {
         tex.y = 600;
 
         app.stage.addChild(tex);
-        //table.addText(3,2,tex);
+        table.addText(3,2,tex);
+        tex.text = "90"
+
+        let spr = table.getSprite(3,2);
+        //let spr2 = table.getSprite(3,2);
+        //console.log('TCL: initial -> tex', spr);
+        
+        spr.tint = 0x0000ff
+        spr.x = 600;
+        spr.y = 600;
+
+        app.stage.addChild(spr);
+        table.addSprite(3,2,spr);
+        spr.tint = 0xffff00;
+        spr.width = 20;
 
         // 設定計時
         app.ticker.add((delta) => { Update(delta); });

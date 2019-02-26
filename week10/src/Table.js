@@ -11,7 +11,7 @@ export default class Table {
             strokeThickness: 6
         });
 
-        let backgroundTex = PIXI.Texture.fromImage("images/backgriund.png");
+        this.backgroundTex = PIXI.Texture.fromImage("images/backgriund.png");
 
         this.container = new PIXI.Container();
 
@@ -32,10 +32,7 @@ export default class Table {
                 //element.maxHeight = h - 3;
 
                 // 容器內的Sprite
-                element.sprite = new PIXI.Sprite(backgroundTex);
-                element.sprite.width = w - 3;
-                element.sprite.height = h - 3;
-                element.sprite.tint = 0xffffff * ((i + j * column) / column * row) ;
+                element.sprite = this.creatSprite(w, h, 0x888888);
                 element.addChild(element.sprite);
 
                 // 容器內的Text
@@ -45,10 +42,12 @@ export default class Table {
                 this.container.addChild(element);
             }
         }
-        
+
         // 畫直線        
         for (let i = 0; i <= column; i++) {
             this.colLine[i] = this.creatLine(typeColumn, i * w, row * h, i);
+
+            // w為直線與左邊直線的距離，也為第i行的寬
             this.colLine[i].w = w;
             this.container.addChild(this.colLine[i]);
         }
@@ -56,6 +55,8 @@ export default class Table {
         // 畫橫線
         for (let i = 0; i <= row; i++) {
             this.rowLine[i] = this.creatLine(typeRow, i * h, column * w, i);
+
+            // h為橫線與上方橫線的距離，也為第i列的高
             this.rowLine[i].h = h;
             this.container.addChild(this.rowLine[i]);
         }
@@ -67,11 +68,23 @@ export default class Table {
         this.container.changeHeight = (rowNum, height, dif = 0) => {
             this.changeHeight(rowNum, height, dif);
         }
+        this.container.addColumn = (column, width) => {
+            this.addColumn(column, width);
+        }
+        this.container.addRow = (row, height) => {
+            this.addRow(row, height);
+        }
         this.container.getText = (column, row) => {
             return this.getText(column, row);
         }
         this.container.addText = (column, row, text) => {
             this.addText(column, row, text);
+        }
+        this.container.getSprite = (column, row) => {
+            return this.getSprite(column, row);
+        }
+        this.container.addSprite = (column, row, sprite) => {
+            this.addSprite(column, row, sprite);
         }
 
         return this.container;
@@ -79,13 +92,13 @@ export default class Table {
 
     changeWidth(columnNum, width, dif) {
         if (columnNum === 0) return;
+        if (columnNum > this.column) return;
 
         // 用 width 指定寬度 
         if (width !== 0) {
             // 位移量        
             dif = width - (this.colLine[columnNum].x - this.colLine[columnNum - 1].x);
             this.colLine[columnNum].w = width;
-            console.log('TCL: Table -> changeWidth -> dif', dif)
         }
 
         // 用滑鼠拖拉的變化量dif決定寬度
@@ -94,7 +107,7 @@ export default class Table {
             this.colLine[columnNum].x -= dif;
         }
 
-        // 移動直行位置
+        // 移動直線位置
         for (let i = columnNum; i <= this.column; i++) {
             this.colLine[i].x += dif;
         }
@@ -109,20 +122,20 @@ export default class Table {
             for (let j = 0; j < this.row; j++) {
                 let element = this.element[i + j * this.column];
 
-                //改變長寬的後面直行改變x座標
+                // 改變長寬的後面直行改變x座標
                 element.x += dif;
                 if (i > columnNum - 1) continue;
 
-                //改變長寬的該行改變寬，不改變座標
+                // 改變長寬的該行改變寬，不改變座標
                 element.sprite.width += dif;
                 element.x -= dif;
-                //element.width += dif;
             }
         }
     }
 
     changeHeight(rowNum, height, dif) {
         if (rowNum === 0) return;
+        if (rowNum > this.row) return;
 
         // 用 height 指定高度
         if (height !== 0) {
@@ -164,18 +177,155 @@ export default class Table {
         }
     }
 
-    addColumn(column, width){
+    addColumn(column, width) {
+        // 簡寫this.colLine
+        let line = this.colLine;
 
+        // 儲存格座標移動
+        for (let i = column; i < this.column; i++) {
+            for (let j = 0; j < this.row; j++) {
+                let element = this.element[i + j * this.column];
+
+                // 改變x座標
+                element.x += width;
+            }
+        }
+
+        // 加一直行
+        this.column += 1;
+
+        // 最後面加一條線，其x座標為原本最後一條的 x座標 + width
+        line[this.column] = this.creatLine(typeColumn, line[this.column - 1].x + width, line[0].height, this.column);
+        line[this.column].w = line[this.column - 1].w;
+        this.container.addChild(line[this.column]);
+
+        // 其餘移動到前一條的 x座標 + width的位置
+        for (let i = this.column - 1; i > column; i--) {
+            line[i].x = line[i - 1].x + width;
+            line[i].w = line[i - 1].w;
+        }
+        line[column + 1].w = width;
+
+        // 橫線寬度加長 Width
+        for (let i = 0; i <= this.row; i++) {
+            this.rowLine[i].width += width;
+        }
+
+        // 調整儲存格內容，由後往前
+        for (let j = this.row - 1; j >= 0; j--) {
+            for (let i = this.column - 1; i >= 0; i--) {
+
+                // 用element簡化要改變的陣列位址
+                let element = this.element[i + j * this.column];
+
+                // 在新增直行的右邊行
+                if (i > column) {
+                    element = this.element[i + j * this.column - j - 1];
+                }
+
+                // 在新增的直行，新增容器
+                else if (i === column) {
+                    element = {};
+                    element = new PIXI.Container();
+                    element.x = line[column].x + 3;
+                    element.y = this.rowLine[j].y + 3;
+
+                    // 容器內的Sprite
+                    element.sprite = this.creatSprite(width, this.rowLine[j + 1].h, 0x88ff88);
+                    element.addChild(element.sprite);
+
+                    this.container.addChild(element);
+                }
+
+                // 在新增直行的左邊行
+                else if (i < column) {
+                    element = this.element[i + j * this.column - j];
+                }
+
+                // 把要改變的陣列位置指回簡寫的element位址
+                this.element[i + j * this.column] = element;
+            }
+        }
     }
 
-    addRow(row, height){
+    addRow(row, height) {
+        // 簡寫this.rowLine
+        let line = this.rowLine;
 
+        // 儲存格座標移動
+        for (let i = 0; i < this.column; i++) {
+            for (let j = row; j < this.row; j++) {
+                let element = this.element[i + j * this.column];
+
+                // 改y座標
+                element.y += height;
+            }
+        }
+
+        // 加一橫列
+        this.row += 1;
+
+        // 最後面加一條線，其y座標為原本最後一條的 y座標 + height
+        line[this.row] = this.creatLine(typeRow, line[this.row - 1].y + height, line[0].width - 3, this.row);
+        line[this.row].h = line[this.row - 1].h;
+        this.container.addChild(line[this.row]);
+
+        // 其餘移動到前一條的 y座標 + height的位置
+        for (let i = this.row - 1; i > row; i--) {
+            line[i].y = line[i - 1].y + height;
+            line[i].h = line[i - 1].h;
+        }
+        line[row + 1].h = height;
+
+        // 直線高度加長 height
+        for (let i = 0; i <= this.column; i++) {
+            this.colLine[i].height += height;
+        }
+
+        // 調整儲存格內容，由後往前
+        for (let j = this.row - 1; j >= 0; j--) {
+            for (let i = this.column - 1; i >= 0; i--) {
+
+                // 用element簡化要改變的陣列位址
+                let element = this.element[i + j * this.column];
+
+                // 在新增橫列的下方列
+                if (j > row) {
+                    element = this.element[i + (j - 1) * this.column];
+                }
+
+                // 在新增的橫列，新增容器
+                else if (j === row) {
+                    element = {};
+                    element = new PIXI.Container();
+                    element.x = this.colLine[i].x + 3;
+                    element.y = line[j].y + 3;
+
+                    // 容器內的Sprite
+                    element.sprite = this.creatSprite(this.colLine[i + 1].w, height, 0x8888ff);
+                    element.addChild(element.sprite);
+
+                    this.container.addChild(element);
+                }
+
+                // 把要改變的陣列位址指回簡寫的element位址
+                this.element[i + j * this.column] = element;
+            }
+        }
+    }
+
+    creatSprite(w, h, color) {
+        let sprite = new PIXI.Sprite(this.backgroundTex);
+        sprite.width = w - 3;
+        sprite.height = h - 3;
+        sprite.tint = color;
+        return sprite;
     }
 
     creatLine(type, xy, len, num) {
         let line = new PIXI.Graphics();
 
-        line.length = len;
+        //line.length = len;
         line.num = num;
         line.type = type;
 
@@ -209,8 +359,15 @@ export default class Table {
 
     getText(column, row) {
         let element = this.element[column - 1 + (row - 1) * this.column];
+        if (!element.text) return;
+
         element.removeChild(element.text)
-        return element.text;
+        let returnText = element.text;
+
+        // 清空原本text的東西
+        element.text = undefined;
+
+        return returnText;
     }
 
     addText(column, row, text) {
@@ -218,28 +375,56 @@ export default class Table {
         element.text = text;
         element.text.x = 0;
         element.text.y = 0;
-        element.text.text = 87;
         element.addChild(element.text);
     }
 
     getSprite(column, row) {
+        let element = this.element[column - 1 + (row - 1) * this.column];
+        console.log('TCL: Table -> getSprite -> sprite', element.sprite)
 
+        if (!element.sprite) return;
+		console.log('TCL: Table -> getSprite -> sprite', element.sprite)
+        
+        element.removeChild(element.sprite)
+        let returnSprite = element.sprite;
+
+        // 清空原本text的東西
+        element.sprite = undefined;
+
+        return returnSprite;
+    }
+
+    addSprite(column, row, sprite) {
+        let element = this.element[column - 1 + (row - 1) * this.column];
+        element.sprite = sprite;
+        element.sprite.x = 0;
+        element.sprite.y = 0;
+        element.addChild(element.sprite);
     }
 }
 
 function lineMouseDown(event) {
     console.log("HIT");
-    if (this.twiceSwitch === true){
-        console.log("Double HIT!!");
 
+    // 雙擊滑鼠的情形
+    if (this.twiceSwitch === true) {
+        if (this.type === typeColumn) {
+            this.parent.addColumn(this.num, 50);
+        }
+        else if (this.type === typeRow) {
+            this.parent.addRow(this.num, 50);
+        }
+        this.twiceSwitch = false;
         return;
     }
 
+    // 雙擊滑鼠的倒數
     this.twiceSwitch = true;
-    setTimeout(()=>{this.twiceSwitch = false;}, 250);
+    setTimeout(() => { this.twiceSwitch = false; }, 250);
 
     // 移動線
     if (this.num === 0) return;
+    console.log("DOWN");
     this.data = event.data;
     this.originX = this.x;
     this.originY = this.y;
@@ -260,7 +445,7 @@ function lineMouseUp() {
         }
         this.parent.changeWidth(this.num, 0, this.x - this.originX)
     }
-        if (this.type === typeRow) {
+    else if (this.type === typeRow) {
         // 線移動到靠近前一條線的情況
         if (this.y <= this.originY - this.h + 5) {
             this.y = this.originY - this.h + 5;
@@ -283,7 +468,7 @@ function lineMouseDrag() {
         }
     }
 
-    if (this.type === typeRow) {
+    else if (this.type === typeRow) {
         this.y = mousePos.y;
 
         // 線移動到靠近前一條線的情況
