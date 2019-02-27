@@ -3,13 +3,6 @@ let typeColumn = "column";
 
 export default class Table {
     constructor(column = 2, row = 2, w = 50, h = 50) {
-        let styleRed = new PIXI.TextStyle({
-            fontFamily: "Arial",
-            fontSize: 72,
-            fill: "#FFAFAF",
-            stroke: '#FF0000',
-            strokeThickness: 6
-        });
 
         this.backgroundTex = PIXI.Texture.fromImage("images/backgriund.png");
 
@@ -29,16 +22,21 @@ export default class Table {
                 element.x = i * w + 3;
                 element.y = j * h + 3;
                 element.number = i + j * column;
-                //element.maxWidth = w - 3;
-                //element.maxHeight = h - 3;
 
                 // 容器內的Sprite
                 element.sprite = this.creatSprite(w, h, 0x888888);
                 element.addChild(element.sprite);
 
-                // 容器內的Text
+                /*// 容器內的Text
+                let styleRed = new PIXI.TextStyle({
+                    fontFamily: "Arial",
+                    fontSize: 72,
+                    fill: "#FFAFAF",
+                    stroke: '#FF0000',
+                    strokeThickness: 6
+                });
                 element.text = new PIXI.Text(i + j * column, styleRed);
-                element.addChild(element.text);
+                element.addChild(element.text);*/
 
                 this.container.addChild(element);
             }
@@ -132,6 +130,8 @@ export default class Table {
                 // 改變長寬的該行改變寬，不改變座標
                 element.sprite.width += dif;
                 element.x -= dif;
+
+                this.checkTextSize(element);
             }
         }
     }
@@ -175,7 +175,8 @@ export default class Table {
                 //改變長寬的該行改變寬，不改變座標
                 element.sprite.height += dif;
                 element.y -= dif;
-                //element.height += dif;
+
+                this.checkTextSize(element);
             }
         }
     }
@@ -382,38 +383,75 @@ export default class Table {
 
     addText(column, row, text) {
         let element = this.element[column - 1 + (row - 1) * this.column];
+        element.removeChild(element.text);
+
         element.text = text;
         element.text.x = 0;
         element.text.y = 0;
+        element.text.originWidth = element.text.width;
+        element.text.originHeight = element.text.height;
+
+        this.checkTextSize(element);
+
         element.addChild(element.text);
     }
 
     getSprite(column, row) {
         let element = this.element[column - 1 + (row - 1) * this.column];
-        console.log('TCL: Table -> getSprite -> sprite', element.sprite)
 
         if (!element.sprite) return;
-        console.log('TCL: Table -> getSprite -> sprite', element.sprite)
 
-        element.removeChild(element.sprite)
+        element.removeChild(element.sprite);
         let returnSprite = element.sprite;
 
-        // 清空原本text的東西
-        element.sprite = undefined;
+        element.sprite = this.creatSprite(returnSprite.width+3,returnSprite.height+3, 0xff00ff);
+        element.addChild(element.sprite);        
 
         return returnSprite;
     }
 
     addSprite(column, row, sprite) {
         let element = this.element[column - 1 + (row - 1) * this.column];
+        let w = element.sprite.width;
+        let h = element.sprite.height;
+		console.log(element.sprite.width, element.sprite.height)
+        element.removeChild(element.sprite);
+
         element.sprite = sprite;
         element.sprite.x = 0;
         element.sprite.y = 0;
+        element.sprite.width = w;
+        element.sprite.height = h;
         element.addChild(element.sprite);
+    }
+
+    checkTextSize(element) {
+        if (!element.text) return;
+
+        // 文字過大會縮小
+        if (element.text.width >= element.sprite.width) {
+            element.text.width = element.sprite.width;
+        }
+        else if (element.text.width < element.sprite.width) {
+            element.text.width = element.text.originWidth;
+        }
+
+        if (element.text.height >= element.sprite.height) {
+            element.text.height = element.sprite.height;
+        }
+        else if (element.text.height < element.sprite.height) {
+            element.text.height = element.text.originHeight;
+        }
+
     }
 }
 
 function spriteMouseDown() {
+    let container = this.parent.parent;
+    let input = container.input;
+
+    input.style.top = "-100px";
+
     // 雙擊滑鼠的情形
     if (this.twiceSwitch === true) {
 
@@ -421,15 +459,15 @@ function spriteMouseDown() {
 
         // 畫面比例縮小的時候
         if (window.innerWidth < 1024) {
-            this.parent.parent.input.style.left = `${pos.x * window.innerWidth / 1024}px`;
-            this.parent.parent.input.style.top = `${pos.y * window.innerWidth / 1024}px`;
+            input.style.left = `${pos.x * window.innerWidth / 1024}px`;
+            input.style.top = `${pos.y * window.innerWidth / 1024}px`;
         }
         else {
-            this.parent.parent.input.style.left = `${pos.x}px`;
-            this.parent.parent.input.style.top = `${pos.y}px`;
+            input.style.left = `${pos.x}px`;
+            input.style.top = `${pos.y}px`;
         }
 
-        this.parent.parent.selectNum = this.parent.number
+        container.selectNum = this.parent.number
 
         this.twiceSwitch = false;
         return;
