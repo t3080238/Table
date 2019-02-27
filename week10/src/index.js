@@ -37,6 +37,10 @@ window.onload = function () {
         table.y = 50;
 
         app.stage.addChild(table);
+
+        // 可以調整長寬或用滑鼠移動調整
+        table.changeWidth(5, 150);
+        table.changeHeight(3, 50);
         
         // 可以加入文字
         let styleRed = new PIXI.TextStyle({
@@ -63,7 +67,7 @@ window.onload = function () {
 
         app.stage.addChild(tex);
 
-        // 可以放入Sprite 或 雙擊放入圖片
+        // 可以放入Sprite 或 雙擊框格放入圖片
         let sprite = new PIXI.Sprite(PIXI.Texture.fromImage("images/sky.jpg"));
         table.addSprite(3, 2, sprite);
 
@@ -74,6 +78,10 @@ window.onload = function () {
         sprite2.x = 300;
         sprite2.y = 600;
         app.stage.addChild(sprite2);
+
+        // 可以加減直行橫列或雙擊線條動態增加
+        table.addColumn(1, 50);
+        table.addRow(0, 30);
 
     }
 }

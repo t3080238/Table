@@ -27,17 +27,6 @@ export default class Table {
                 element.sprite = this.creatSprite(w, h, 0x888888);
                 element.addChild(element.sprite);
 
-                /*// 容器內的Text
-                let styleRed = new PIXI.TextStyle({
-                    fontFamily: "Arial",
-                    fontSize: 72,
-                    fill: "#FFAFAF",
-                    stroke: '#FF0000',
-                    strokeThickness: 6
-                });
-                element.text = new PIXI.Text(i + j * column, styleRed);
-                element.addChild(element.text);*/
-
                 this.container.addChild(element);
             }
         }
@@ -404,8 +393,8 @@ export default class Table {
         element.removeChild(element.sprite);
         let returnSprite = element.sprite;
 
-        element.sprite = this.creatSprite(returnSprite.width+3,returnSprite.height+3, 0xff00ff);
-        element.addChild(element.sprite);        
+        element.sprite = this.creatSprite(returnSprite.width + 3, returnSprite.height + 3, 0xff00ff);
+        element.addChild(element.sprite);
 
         return returnSprite;
     }
@@ -414,7 +403,7 @@ export default class Table {
         let element = this.element[column - 1 + (row - 1) * this.column];
         let w = element.sprite.width;
         let h = element.sprite.height;
-		console.log(element.sprite.width, element.sprite.height)
+        console.log(element.sprite.width, element.sprite.height)
         element.removeChild(element.sprite);
 
         element.sprite = sprite;
@@ -429,20 +418,19 @@ export default class Table {
         if (!element.text) return;
 
         // 文字過大會縮小
-        if (element.text.width >= element.sprite.width) {
+        if (element.sprite.width <= element.text.width) {
             element.text.width = element.sprite.width;
         }
-        else if (element.text.width < element.sprite.width) {
+        else if (element.sprite.width > element.text.width) {
             element.text.width = element.text.originWidth;
         }
 
-        if (element.text.height >= element.sprite.height) {
+        if (element.sprite.height <= element.text.height) {
             element.text.height = element.sprite.height;
         }
-        else if (element.text.height < element.sprite.height) {
+        else if (element.sprite.height > element.text.height) {
             element.text.height = element.text.originHeight;
         }
-
     }
 }
 
