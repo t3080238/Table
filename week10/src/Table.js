@@ -304,6 +304,7 @@ export default class Table {
                     element = new PIXI.Container();
                     element.x = this.colLine[i].x + 3;
                     element.y = line[j].y + 3;
+                    element.number = i + j * this.column;
 
                     // 容器內的Sprite
                     element.sprite = this.creatSprite(this.colLine[i + 1].w, height, 0x8888ff);
