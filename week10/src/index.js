@@ -8,12 +8,7 @@ window.onload = function () {
 
     //Aliases 設定別名
     let Application = PIXI.Application,
-        resources = PIXI.loader.resources,
-        loader = PIXI.loader,
-        Sprite = PIXI.Sprite,
-        TextureCache = PIXI.utils.TextureCache,
-        Graphics = PIXI.Graphics,
-        Container = PIXI.Container
+        loader = PIXI.loader
 
     // Create a Pixi Application 
     let app = new Application({
@@ -54,9 +49,7 @@ window.onload = function () {
         table.addText(3,2,tex);
         tex.text = "90"
 
-        let spr = table.getSprite(3,2);
-        //let spr2 = table.getSprite(3,2);
-        //console.log('TCL: initial -> tex', spr);
+       /* let spr = table.getSprite(3,2);
         
         spr.tint = 0x0000ff
         spr.x = 600;
@@ -65,13 +58,7 @@ window.onload = function () {
         app.stage.addChild(spr);
         table.addSprite(3,2,spr);
         spr.tint = 0xffff00;
-        spr.width = 20;
-
-        // 設定計時
-        app.ticker.add((delta) => { Update(delta); });
-    }
-
-    function Update(delta) {
+        spr.width = 20;*/
 
     }
 }

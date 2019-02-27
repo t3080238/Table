@@ -28,6 +28,7 @@ export default class Table {
                 let element = this.element[i + j * column];
                 element.x = i * w + 3;
                 element.y = j * h + 3;
+                element.number = i + j * column;
                 //element.maxWidth = w - 3;
                 //element.maxHeight = h - 3;
 
@@ -60,6 +61,8 @@ export default class Table {
             this.rowLine[i].h = h;
             this.container.addChild(this.rowLine[i]);
         }
+
+        htmlInput(this);
 
         // 讓回傳的 container 指向 class 的函式，可以讓外面的人使用
         this.container.changeWidth = (columnNum, width, dif = 0) => {
@@ -229,6 +232,7 @@ export default class Table {
                     element = new PIXI.Container();
                     element.x = line[column].x + 3;
                     element.y = this.rowLine[j].y + 3;
+                    element.number = i + j * this.column;
 
                     // 容器內的Sprite
                     element.sprite = this.creatSprite(width, this.rowLine[j + 1].h, 0x88ff88);
@@ -319,6 +323,11 @@ export default class Table {
         sprite.width = w - 3;
         sprite.height = h - 3;
         sprite.tint = color;
+
+        sprite.twiceSwitch = false;
+        sprite.interactive = true;
+        sprite.on('pointerdown', spriteMouseDown)
+
         return sprite;
     }
 
@@ -383,8 +392,8 @@ export default class Table {
         console.log('TCL: Table -> getSprite -> sprite', element.sprite)
 
         if (!element.sprite) return;
-		console.log('TCL: Table -> getSprite -> sprite', element.sprite)
-        
+        console.log('TCL: Table -> getSprite -> sprite', element.sprite)
+
         element.removeChild(element.sprite)
         let returnSprite = element.sprite;
 
@@ -401,6 +410,33 @@ export default class Table {
         element.sprite.y = 0;
         element.addChild(element.sprite);
     }
+}
+
+function spriteMouseDown() {
+    // 雙擊滑鼠的情形
+    if (this.twiceSwitch === true) {
+
+        let pos = this.parent.toGlobal(this.position);
+
+        // 畫面比例縮小的時候
+        if (window.innerWidth < 1024) {
+            this.parent.parent.input.style.left = `${pos.x * window.innerWidth / 1024}px`;
+            this.parent.parent.input.style.top = `${pos.y * window.innerWidth / 1024}px`;
+        }
+        else {
+            this.parent.parent.input.style.left = `${pos.x}px`;
+            this.parent.parent.input.style.top = `${pos.y}px`;
+        }
+
+        this.parent.parent.selectNum = this.parent.number
+
+        this.twiceSwitch = false;
+        return;
+    }
+
+    // 雙擊滑鼠的倒數
+    this.twiceSwitch = true;
+    setTimeout(() => { this.twiceSwitch = false; }, 250);
 }
 
 function lineMouseDown(event) {
@@ -476,4 +512,40 @@ function lineMouseDrag() {
             this.y = this.originY - this.h + 5;
         }
     }
+}
+
+function htmlInput(table) {
+    let container = table.container;
+
+    container.selectNum = -1;
+
+    container.input = document.createElement("input");
+    container.input.type = "file";
+    container.input.style.position = "fixed";
+    container.input.style.top = "-100px";
+    container.input.style.margin = "10px";
+    container.input.accept = "image/gif, image/jpeg, image/png";
+
+    // 指向容器和Table，方便更換圖片取用
+    container.input.parent = container;
+    container.input.table = table;
+
+    $(container.input).on("change", () => { selectImage(container.input); });
+    document.body.appendChild(container.input);
+}
+
+function selectImage(input) {
+    let table = input.table;
+    let container = input.parent;
+
+    let file = input.files[0];
+    let src = URL.createObjectURL(file);
+
+    // 選到的Sprite
+    let selectSprite = table.element[container.selectNum].sprite;
+
+    input.style.top = "-100px";
+
+    selectSprite.tint = 0xffffff;
+    selectSprite.texture = PIXI.Texture.fromImage(src);
 }
